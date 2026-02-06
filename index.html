@@ -487,11 +487,96 @@
     const deckGrid = document.getElementById('deck-grid');
 
     let savedCategories = new Set();
-    let currentFilter = ''; 
+    let currentFilter = '';
+    let customCategoryColors = {};
+
+    function loadCustomColors() {
+        const stored = localStorage.getItem('infinity_custom_colors');
+        if (stored) {
+            customCategoryColors = JSON.parse(stored);
+        }
+    }
+
+    function saveCustomColors() {
+        localStorage.setItem('infinity_custom_colors', JSON.stringify(customCategoryColors));
+    }
+
+    function generateColorForCategory(category) {
+        // Generate a consistent color based on category name
+        let hash = 0;
+        for (let i = 0; i < category.length; i++) {
+            hash = category.charCodeAt(i) + ((hash << 5) - hash);
+        }
+        
+        // Generate vibrant colors
+        const hue = Math.abs(hash % 360);
+        const saturation = 85 + (Math.abs(hash) % 15); // 85-100%
+        const lightness = 50 + (Math.abs(hash >> 8) % 15); // 50-65%
+        
+        return `hsl(${hue}, ${saturation}%, ${lightness}%)`;
+    }
+
+    function getCategoryColor(category) {
+        const predefinedColors = {
+            'WORK': '#FF1744',
+            'TODO': '#00E5FF',
+            'IDEA': '#FFEA00',
+            'WOW': '#D500F9',
+            'WFGWG': '#FF6E40',
+            'SRF': '#00E676',
+            'RRRR': '#FF4081',
+            'TTT': '#00B0FF',
+            'FD': '#FF3D00',
+            'FWERFFFF': '#B388FF',
+            'GEN': '#00BCD4'
+        };
+        
+        if (predefinedColors[category]) {
+            return predefinedColors[category];
+        }
+        
+        if (!customCategoryColors[category]) {
+            customCategoryColors[category] = generateColorForCategory(category);
+            saveCustomColors();
+        }
+        
+        return customCategoryColors[category];
+    }
+
+    function applyCategoryStyles(category) {
+        const color = getCategoryColor(category);
+        
+        // Create dynamic style element if it doesn't exist
+        let styleEl = document.getElementById('dynamic-category-styles');
+        if (!styleEl) {
+            styleEl = document.createElement('style');
+            styleEl.id = 'dynamic-category-styles';
+            document.head.appendChild(styleEl);
+        }
+        
+        // Add CSS rules for this category
+        const css = `
+            .note-row[data-category="${category}"] { border-top-color: ${color} !important; }
+            .note-row[data-category="${category}"] .spacer-line.number::after { color: ${color}; }
+            .note-row[data-category="${category}"] .note-content { color: ${color}; caret-color: ${color}; }
+            .note-row[data-category="${category}"] .note-cat-input { color: ${color}; border-right-color: ${color}; }
+            .note-row[data-category="${category}"] .spacer-line { border-right-color: ${color}; }
+            .note-row[data-category="${category}"] .note-cat-label { border-color: ${color}; color: ${color}; }
+            .deck-btn[data-category="${category}"] { border-color: ${color}; color: ${color}; }
+            .deck-btn[data-category="${category}"].active { background-color: ${color}; color: var(--bg-dark); }
+        `;
+        
+        // Check if this category already has styles
+        if (!styleEl.textContent.includes(`[data-category="${category}"]`)) {
+            styleEl.textContent += css;
+        }
+    } 
 
     function renderDeck() {
         deckGrid.innerHTML = '';
         savedCategories.forEach(cat => {
+            applyCategoryStyles(cat); // Apply styles for this category
+            
             const btn = document.createElement('button');
             btn.className = `deck-btn ${currentFilter === cat ? 'active' : ''}`;
             btn.innerText = cat;
@@ -587,21 +672,7 @@
         renderDeck(); 
         catInput.value = category;
         
-        const categoryColors = {
-            'WORK': '#FF1744',
-            'TODO': '#00E5FF',
-            'IDEA': '#FFEA00',
-            'WOW': '#D500F9',
-            'WFGWG': '#FF6E40',
-            'SRF': '#00E676',
-            'RRRR': '#FF4081',
-            'TTT': '#00B0FF',
-            'FD': '#FF3D00',
-            'FWERFFFF': '#B388FF',
-            'GEN': '#00BCD4'
-        };
-        
-        const color = categoryColors[category] || '#00D9FF';
+        const color = getCategoryColor(category);
         document.documentElement.style.setProperty('--active-category-color', color);
 
         const rows = document.querySelectorAll('#notes-list .note-row');
@@ -719,7 +790,7 @@
         }
     });
     
-    window.addEventListener('load', () => { loadAll(); catInput.focus(); });
+    window.addEventListener('load', () => { loadCustomColors(); loadAll(); catInput.focus(); });
 </script>
 </body>
 </html>
