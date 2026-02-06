@@ -7,25 +7,29 @@
     
     <link rel="manifest" href="manifest.json">
 
-    <meta name="theme-color" content="#0A0B10">
+    <meta name="theme-color" content="#0F1419">
     <meta name="mobile-web-app-capable" content="yes">
 
     <meta name="apple-mobile-web-app-capable" content="yes">
     <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
     <meta name="apple-mobile-web-app-title" content="Infinity Notes">
-    <link href="https://fonts.googleapis.com/css2?family=Lexend+Deca:wght@300;900&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&family=JetBrains+Mono:wght@600;700&display=swap" rel="stylesheet">
     
     <style>
         :root {
-            --row-height: 100px; 
-            --num-width: 70px; 
-            --font-main: 1.8rem;
-            --line-weight: 2px; /* Uniform line width for everything */
-            --bg-dark: #0A0B10; /* Deep Midnight */
-            --accent: #00F2FF;  /* Terminal Cyan */
-            --accent-dim: rgba(0, 242, 255, 0.15);
+            --row-height: 90px; 
+            --num-width: 65px; 
+            --font-main: 1.7rem;
+            --line-weight: 1.5px;
+            --bg-dark: #0F1419;
+            --bg-secondary: #1A1F29;
+            --accent: #00D9FF;
+            --accent-dim: rgba(0, 217, 255, 0.1);
             --line-style: var(--line-weight) solid var(--accent);
-            --deck-height: 240px; 
+            --deck-height: 220px;
+            --text-muted: #6B7280;
+            --border-radius: 4px;
+            --active-category-color: #00D9FF;
         }
 
         * { box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
@@ -37,10 +41,11 @@
             display: flex;
             flex-direction: column;
             height: 100vh;
-            font-family: 'Lexend Deca', sans-serif;
+            font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
             overflow: hidden;
             overscroll-behavior-y: none; 
-            user-select: none; 
+            user-select: none;
+            border-left: var(--line-weight) solid var(--active-category-color);
         }
 
         .app-frame {
@@ -48,8 +53,8 @@
             flex-direction: column;
             height: calc(100vh - var(--deck-height));
             width: 100%;
-            border-left: var(--line-style);
-            border-right: var(--line-style);
+            border-left: var(--line-weight) solid var(--active-category-color);
+            border-right: var(--line-weight) solid var(--active-category-color);
             position: relative;
             counter-reset: note-counter;
         }
@@ -61,8 +66,8 @@
             width: 100%;
             overflow-y: auto;
             flex-grow: 1;
-            -webkit-mask-image: linear-gradient(to top, black 90%, transparent 100%);
-            mask-image: linear-gradient(to top, black 90%, transparent 100%);
+            -webkit-mask-image: linear-gradient(to top, black 85%, transparent 100%);
+            mask-image: linear-gradient(to top, black 85%, transparent 100%);
         }
 
         .grid-row {
@@ -72,35 +77,45 @@
             height: var(--row-height);
             flex-shrink: 0;
             background-color: var(--bg-dark);
-            border-top: var(--line-style); /* All lines are identical */
+            border-top: var(--line-style);
         }
 
         .grid-row.hidden { display: none !important; }
 
         .spacer-line {
             height: 100%;
-            background-color: var(--bg-dark);
-            border-right: var(--line-style); /* Uniform lines */
+            background-color: var(--bg-secondary);
+            border-right: var(--line-weight) solid var(--active-category-color);
             display: flex;
             align-items: center;
             justify-content: center;
             z-index: 10;
+            color: var(--active-category-color);
+            font-weight: 700;
+            font-family: 'JetBrains Mono', monospace;
+            position: relative;
+        }
+
+        .spacer-line.number {
+            flex-direction: column;
+            gap: 8px;
+        }
+
+        .spacer-line.number::after {
+            counter-increment: note-counter;
+            content: counter(note-counter);
+            font-size: 0.95rem;
             color: var(--accent);
-            font-weight: 900;
+            opacity: 1;
+            font-weight: 600;
+            order: 2;
         }
 
         .spacer-line.infinity::after { 
             content: "∞"; 
-            font-size: 2rem;
-            color: var(--accent);
-        }
-
-        .spacer-line.number::before {
-            counter-increment: note-counter;
-            content: counter(note-counter);
-            font-size: 1.1rem;
-            color: var(--accent);
-            opacity: 0.7;
+            font-size: 1.8rem;
+            color: var(--active-category-color);
+            opacity: 0.8;
         }
 
         .content-wrapper {
@@ -108,7 +123,7 @@
             overflow: hidden;
             background-color: var(--accent);
             height: 100%;
-            display: flex; 
+            display: flex;
         }
 
         .note-content {
@@ -117,9 +132,9 @@
             background-color: var(--bg-dark);
             color: var(--accent);
             border: none;
-            padding: 15px 20px 0 20px; 
+            padding: 16px 20px 0 16px; 
             font-size: var(--font-main);
-            font-weight: 900;
+            font-weight: 600;
             outline: none;
             display: flex;
             align-items: center;
@@ -129,41 +144,183 @@
             transition: transform 0.25s cubic-bezier(0.2, 0, 0.2, 1);
             position: relative;
             z-index: 2;
-            user-select: text; 
+            user-select: text;
+            letter-spacing: 0.3px;
         }
 
-        /* --- INPUT STYLES --- */
+        /* --- INPUT AREA --- */
+        .input-area {
+            border-top-color: var(--active-category-color) !important;
+            border-left-color: var(--active-category-color) !important;
+            border-right-color: var(--active-category-color) !important;
+        }
+
         #cat-input {
             width: 90px;
             height: 100%;
-            background-color: var(--bg-dark);
-            color: var(--accent);
+            background-color: var(--bg-secondary);
+            color: var(--active-category-color);
             border: none;
-            border-right: var(--line-style);
-            font-family: 'Lexend Deca', sans-serif;
-            font-size: 0.85rem;
-            font-weight: 900;
+            border-right: var(--line-weight) solid var(--active-category-color);
+            font-family: 'JetBrains Mono', monospace;
+            font-size: 0.75rem;
+            font-weight: 700;
             text-transform: uppercase;
             text-align: center;
             padding: 0 5px;
             outline: none;
             z-index: 5;
             user-select: text;
+            letter-spacing: 1.2px;
         }
-        #cat-input::placeholder { color: var(--accent-dim); }
+        #cat-input::placeholder { color: var(--text-muted); }
 
         .note-cat-label {
-            position: absolute;
-            top: 10px;
-            left: 20px;
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
             font-size: 0.6rem;
             text-transform: uppercase;
-            color: var(--accent);
-            opacity: 0.5;
-            letter-spacing: 2px;
+            opacity: 1;
+            letter-spacing: 1.2px;
             pointer-events: none;
-            z-index: 3;
+            z-index: 8;
+            font-weight: 700;
+            font-family: 'JetBrains Mono', monospace;
+            padding: 6px 8px;
+            border: 1.5px solid;
+            border-radius: 3px;
+            white-space: nowrap;
+            order: 1;
         }
+
+        /* Category-specific colors for note rows when displayed */
+        .note-row[data-category="WORK"] { --cat-color: #FF0000; }
+        .note-row[data-category="TODO"] { --cat-color: #0000FF; }
+        .note-row[data-category="IDEA"] { --cat-color: #FFFF00; }
+        .note-row[data-category="WOW"] { --cat-color: #FF00FF; }
+        .note-row[data-category="WFGWG"] { --cat-color: #FFA500; }
+        .note-row[data-category="SRF"] { --cat-color: #00FF00; }
+        .note-row[data-category="RRRR"] { --cat-color: #FF69B4; }
+        .note-row[data-category="TTT"] { --cat-color: #00FFFF; }
+        .note-row[data-category="FD"] { --cat-color: #FF4500; }
+        .note-row[data-category="FWERFFFF"] { --cat-color: #8B00FF; }
+        .note-row[data-category="GEN"] { --cat-color: #00CED1; }
+
+        /* Apply category color to border top */
+        .note-row[data-category="WORK"] { border-top-color: #FF0000 !important; }
+        .note-row[data-category="TODO"] { border-top-color: #0000FF !important; }
+        .note-row[data-category="IDEA"] { border-top-color: #FFFF00 !important; }
+        .note-row[data-category="WOW"] { border-top-color: #FF00FF !important; }
+        .note-row[data-category="WFGWG"] { border-top-color: #FFA500 !important; }
+        .note-row[data-category="SRF"] { border-top-color: #00FF00 !important; }
+        .note-row[data-category="RRRR"] { border-top-color: #FF69B4 !important; }
+        .note-row[data-category="TTT"] { border-top-color: #00FFFF !important; }
+        .note-row[data-category="FD"] { border-top-color: #FF4500 !important; }
+        .note-row[data-category="FWERFFFF"] { border-top-color: #8B00FF !important; }
+        .note-row[data-category="GEN"] { border-top-color: #00CED1 !important; }
+
+        /* Number color */
+        .note-row[data-category="WORK"] .spacer-line.number::after { color: #FF0000; }
+        .note-row[data-category="TODO"] .spacer-line.number::after { color: #0000FF; }
+        .note-row[data-category="IDEA"] .spacer-line.number::after { color: #FFFF00; }
+        .note-row[data-category="WOW"] .spacer-line.number::after { color: #FF00FF; }
+        .note-row[data-category="WFGWG"] .spacer-line.number::after { color: #FFA500; }
+        .note-row[data-category="SRF"] .spacer-line.number::after { color: #00FF00; }
+        .note-row[data-category="RRRR"] .spacer-line.number::after { color: #FF69B4; }
+        .note-row[data-category="TTT"] .spacer-line.number::after { color: #00FFFF; }
+        .note-row[data-category="FD"] .spacer-line.number::after { color: #FF4500; }
+        .note-row[data-category="FWERFFFF"] .spacer-line.number::after { color: #8B00FF; }
+        .note-row[data-category="GEN"] .spacer-line.number::after { color: #00CED1; }
+
+        /* Content text color and caret */
+        .note-row[data-category="WORK"] .note-content { color: #FF0000; caret-color: #FF0000; }
+        .note-row[data-category="TODO"] .note-content { color: #0000FF; caret-color: #0000FF; }
+        .note-row[data-category="IDEA"] .note-content { color: #FFFF00; caret-color: #FFFF00; }
+        .note-row[data-category="WOW"] .note-content { color: #FF00FF; caret-color: #FF00FF; }
+        .note-row[data-category="WFGWG"] .note-content { color: #FFA500; caret-color: #FFA500; }
+        .note-row[data-category="SRF"] .note-content { color: #00FF00; caret-color: #00FF00; }
+        .note-row[data-category="RRRR"] .note-content { color: #FF69B4; caret-color: #FF69B4; }
+        .note-row[data-category="TTT"] .note-content { color: #00FFFF; caret-color: #00FFFF; }
+        .note-row[data-category="FD"] .note-content { color: #FF4500; caret-color: #FF4500; }
+        .note-row[data-category="FWERFFFF"] .note-content { color: #8B00FF; caret-color: #8B00FF; }
+        .note-row[data-category="GEN"] .note-content { color: #00CED1; caret-color: #00CED1; }
+
+        /* Category input color */
+        .note-row[data-category="WORK"] .note-cat-input { color: #FF0000; border-right-color: #FF0000; }
+        .note-row[data-category="TODO"] .note-cat-input { color: #0000FF; border-right-color: #0000FF; }
+        .note-row[data-category="IDEA"] .note-cat-input { color: #FFFF00; border-right-color: #FFFF00; }
+        .note-row[data-category="WOW"] .note-cat-input { color: #FF00FF; border-right-color: #FF00FF; }
+        .note-row[data-category="WFGWG"] .note-cat-input { color: #FFA500; border-right-color: #FFA500; }
+        .note-row[data-category="SRF"] .note-cat-input { color: #00FF00; border-right-color: #00FF00; }
+        .note-row[data-category="RRRR"] .note-cat-input { color: #FF69B4; border-right-color: #FF69B4; }
+        .note-row[data-category="TTT"] .note-cat-input { color: #00FFFF; border-right-color: #00FFFF; }
+        .note-row[data-category="FD"] .note-cat-input { color: #FF4500; border-right-color: #FF4500; }
+        .note-row[data-category="FWERFFFF"] .note-cat-input { color: #8B00FF; border-right-color: #8B00FF; }
+        .note-row[data-category="GEN"] .note-cat-input { color: #00CED1; border-right-color: #00CED1; }
+
+        /* Spacer line border color by category */
+        .note-row[data-category="WORK"] .spacer-line { border-right-color: #FF0000; }
+        .note-row[data-category="TODO"] .spacer-line { border-right-color: #0000FF; }
+        .note-row[data-category="IDEA"] .spacer-line { border-right-color: #FFFF00; }
+        .note-row[data-category="WOW"] .spacer-line { border-right-color: #FF00FF; }
+        .note-row[data-category="WFGWG"] .spacer-line { border-right-color: #FFA500; }
+        .note-row[data-category="SRF"] .spacer-line { border-right-color: #00FF00; }
+        .note-row[data-category="RRRR"] .spacer-line { border-right-color: #FF69B4; }
+        .note-row[data-category="TTT"] .spacer-line { border-right-color: #00FFFF; }
+        .note-row[data-category="FD"] .spacer-line { border-right-color: #FF4500; }
+        .note-row[data-category="FWERFFFF"] .spacer-line { border-right-color: #8B00FF; }
+        .note-row[data-category="GEN"] .spacer-line { border-right-color: #00CED1; }
+
+        /* Content wrapper border */
+        .note-row[data-category="WORK"] .content-wrapper { border-left-color: #FF0000; }
+        .note-row[data-category="TODO"] .content-wrapper { border-left-color: #0000FF; }
+        .note-row[data-category="IDEA"] .content-wrapper { border-left-color: #FFFF00; }
+        .note-row[data-category="WOW"] .content-wrapper { border-left-color: #FF00FF; }
+        .note-row[data-category="WFGWG"] .content-wrapper { border-left-color: #FFA500; }
+        .note-row[data-category="SRF"] .content-wrapper { border-left-color: #00FF00; }
+        .note-row[data-category="RRRR"] .content-wrapper { border-left-color: #FF69B4; }
+        .note-row[data-category="TTT"] .content-wrapper { border-left-color: #00FFFF; }
+        .note-row[data-category="FD"] .content-wrapper { border-left-color: #FF4500; }
+        .note-row[data-category="FWERFFFF"] .content-wrapper { border-left-color: #8B00FF; }
+        .note-row[data-category="GEN"] .content-wrapper { border-left-color: #00CED1; }
+
+        /* --- NOTE CATEGORY INPUT --- */
+        .note-cat-input {
+            width: 90px;
+            height: 100%;
+            background-color: var(--bg-secondary);
+            color: var(--accent);
+            border: none;
+            border-right: var(--line-style);
+            font-family: 'JetBrains Mono', monospace;
+            font-size: 0.75rem;
+            font-weight: 700;
+            text-transform: uppercase;
+            text-align: center;
+            padding: 0 5px;
+            outline: none;
+            z-index: 5;
+            user-select: text;
+            letter-spacing: 1.2px;
+            cursor: default;
+        }
+
+        /* Category-specific border colors */
+        .note-row[data-category="WORK"] .note-cat-label { border-color: #FF6B6B; color: #FF6B6B; }
+        .note-row[data-category="TODO"] .note-cat-label { border-color: #4ECDC4; color: #4ECDC4; }
+        .note-row[data-category="IDEA"] .note-cat-label { border-color: #FFE66D; color: #FFE66D; }
+        .note-row[data-category="WOW"] .note-cat-label { border-color: #A8E6CF; color: #A8E6CF; }
+        .note-row[data-category="WFGWG"] .note-cat-label { border-color: #FFD3B6; color: #FFD3B6; }
+        .note-row[data-category="SRF"] .note-cat-label { border-color: #FFAAA5; color: #FFAAA5; }
+        .note-row[data-category="RRRR"] .note-cat-label { border-color: #AA96DA; color: #AA96DA; }
+        .note-row[data-category="TTT"] .note-cat-label { border-color: #FCBAD3; color: #FCBAD3; }
+        .note-row[data-category="FD"] .note-cat-label { border-color: #A1CFF0; color: #A1CFF0; }
+        .note-row[data-category="FWERFFFF"] .note-cat-label { border-color: #FF9671; color: #FF9671; }
+        .note-row[data-category="GEN"] .note-cat-label { border-color: #6B7280; color: #6B7280; }
+
+        /* Default color for any other category */
+        .note-row .note-cat-label { border-color: var(--accent); color: var(--accent); }
 
         /* --- CATEGORY DECK --- */
         #category-deck {
@@ -172,62 +329,86 @@
             left: 0;
             width: 100%;
             height: var(--deck-height);
-            background-color: var(--bg-dark);
-            border-top: var(--line-style); /* Frame consistency */
-            border-left: var(--line-style);
-            border-right: var(--line-style);
+            background-color: var(--bg-secondary);
+            border-top: var(--line-weight) solid var(--active-category-color);
+            border-left: var(--line-weight) solid var(--active-category-color);
+            border-right: var(--line-weight) solid var(--active-category-color);
+            border-bottom: var(--line-weight) solid var(--active-category-color);
             z-index: 100;
             display: flex;
             flex-direction: column;
-            padding: 20px;
+            padding: 16px 20px 20px 20px;
         }
 
         .deck-label {
-            font-size: 0.65rem;
-            color: var(--accent);
+            font-size: 0.6rem;
+            color: var(--text-muted);
             text-transform: uppercase;
-            margin-bottom: 15px;
-            opacity: 0.6;
+            margin-bottom: 12px;
+            opacity: 1;
             text-align: center;
-            letter-spacing: 4px;
+            letter-spacing: 2px;
+            font-weight: 700;
+            font-family: 'JetBrains Mono', monospace;
         }
 
         #deck-grid {
             display: flex;
             flex-wrap: wrap;
-            gap: 12px;
+            gap: 10px;
             overflow-y: auto;
             justify-content: center;
             align-content: flex-start;
             height: 100%;
-            padding-bottom: 20px;
+            padding-bottom: 10px;
         }
 
         .deck-btn {
             background-color: transparent;
             border: var(--line-weight) solid var(--accent);
             color: var(--accent);
-            font-family: 'Lexend Deca', sans-serif;
-            font-weight: 900;
-            font-size: 0.85rem;
+            font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+            font-weight: 700;
+            font-size: 0.8rem;
             text-transform: uppercase;
-            padding: 14px 18px;
+            padding: 12px 16px;
             cursor: pointer;
             flex-grow: 1;
-            min-width: 100px;
-            max-width: 46%;
+            min-width: 90px;
+            max-width: 45%;
             text-align: center;
-            transition: all 0.2s;
-            letter-spacing: 1px;
+            transition: all 0.2s cubic-bezier(0.2, 0, 0.2, 1);
+            letter-spacing: 0.8px;
+            border-radius: var(--border-radius);
         }
 
-        .deck-btn:active { transform: scale(0.96); }
+        /* Category-specific button colors */
+        .deck-btn[data-category="WORK"] { border-color: #FF6B6B; color: #FF6B6B; }
+        .deck-btn[data-category="TODO"] { border-color: #4ECDC4; color: #4ECDC4; }
+        .deck-btn[data-category="IDEA"] { border-color: #FFE66D; color: #FFE66D; }
+        .deck-btn[data-category="WOW"] { border-color: #A8E6CF; color: #A8E6CF; }
+        .deck-btn[data-category="WFGWG"] { border-color: #FFD3B6; color: #FFD3B6; }
+        .deck-btn[data-category="SRF"] { border-color: #FFAAA5; color: #FFAAA5; }
+        .deck-btn[data-category="RRRR"] { border-color: #AA96DA; color: #AA96DA; }
+        .deck-btn[data-category="TTT"] { border-color: #FCBAD3; color: #FCBAD3; }
+        .deck-btn[data-category="FD"] { border-color: #A1CFF0; color: #A1CFF0; }
+        .deck-btn[data-category="FWERFFFF"] { border-color: #FF9671; color: #FF9671; }
+        .deck-btn[data-category="GEN"] { border-color: #6B7280; color: #6B7280; }
 
-        .deck-btn.active {
-            background-color: var(--accent);
-            color: var(--bg-dark);
-            box-shadow: 0 0 20px var(--accent-dim);
-        }
+        .deck-btn:active { transform: scale(0.95); }
+
+        /* Active button states with proper color contrast */
+        .deck-btn[data-category="WORK"].active { background-color: #FF6B6B; color: var(--bg-dark); box-shadow: 0 0 16px #FF6B6B; }
+        .deck-btn[data-category="TODO"].active { background-color: #4ECDC4; color: var(--bg-dark); box-shadow: 0 0 16px #4ECDC4; }
+        .deck-btn[data-category="IDEA"].active { background-color: #FFE66D; color: #0F1419; box-shadow: 0 0 16px #FFE66D; }
+        .deck-btn[data-category="WOW"].active { background-color: #A8E6CF; color: #0F1419; box-shadow: 0 0 16px #A8E6CF; }
+        .deck-btn[data-category="WFGWG"].active { background-color: #FFD3B6; color: #0F1419; box-shadow: 0 0 16px #FFD3B6; }
+        .deck-btn[data-category="SRF"].active { background-color: #FFAAA5; color: var(--bg-dark); box-shadow: 0 0 16px #FFAAA5; }
+        .deck-btn[data-category="RRRR"].active { background-color: #AA96DA; color: var(--bg-dark); box-shadow: 0 0 16px #AA96DA; }
+        .deck-btn[data-category="TTT"].active { background-color: #FCBAD3; color: #0F1419; box-shadow: 0 0 16px #FCBAD3; }
+        .deck-btn[data-category="FD"].active { background-color: #A1CFF0; color: #0F1419; box-shadow: 0 0 16px #A1CFF0; }
+        .deck-btn[data-category="FWERFFFF"].active { background-color: #FF9671; color: var(--bg-dark); box-shadow: 0 0 16px #FF9671; }
+        .deck-btn[data-category="GEN"].active { background-color: #6B7280; color: var(--bg-dark); box-shadow: 0 0 16px #6B7280; }
 
         /* --- UTILITY --- */
         .delete-hint {
@@ -238,9 +419,11 @@
             display: flex;
             align-items: center;
             color: var(--bg-dark);
-            font-size: 0.9rem;
-            font-weight: 900;
+            font-size: 0.85rem;
+            font-weight: 700;
             z-index: 1;
+            font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+            letter-spacing: 0.5px;
         }
 
         .desktop-delete-btn {
@@ -248,12 +431,12 @@
             right: 0;
             top: 0;
             bottom: 0;
-            width: 70px;
+            width: 65px;
             background-color: var(--bg-dark);
             color: var(--accent);
             border: none;
-            font-family: 'Lexend Deca', sans-serif;
-            font-size: 1.8rem;
+            font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+            font-size: 1.6rem;
             display: flex;
             align-items: center;
             justify-content: center;
@@ -261,6 +444,7 @@
             z-index: 10;
             opacity: 0; 
             transition: opacity 0.2s;
+            font-weight: 300;
         }
 
         .content-wrapper:hover .desktop-delete-btn { opacity: 1; }
@@ -272,7 +456,7 @@
 
         #notes-list::-webkit-scrollbar { display: none; }
         #deck-grid::-webkit-scrollbar { display: none; }
-        #main-input { padding-top: 0; font-size: 1.9rem; } 
+        #main-input { padding-top: 0; font-size: 1.85rem; font-weight: 700; color: var(--active-category-color); caret-color: var(--active-category-color); } 
     </style>
 </head>
 <body>
@@ -312,6 +496,7 @@
             const btn = document.createElement('button');
             btn.className = `deck-btn ${currentFilter === cat ? 'active' : ''}`;
             btn.innerText = cat;
+            btn.setAttribute('data-category', cat);
             
             let pressTimer;
             let isLongPress = false;
@@ -328,12 +513,16 @@
 
             const cancelPress = () => clearTimeout(pressTimer);
 
-            btn.addEventListener('touchstart', startPress, {passive: true});
+            btn.addEventListener('touchstart', (e) => {
+                startPress();
+            }, {passive: true});
             btn.addEventListener('touchend', (e) => {
                 cancelPress();
                 if (!isLongPress) applyFilter(cat); 
-            });
-            btn.addEventListener('touchmove', cancelPress, {passive: true}); 
+            }, {passive: true});
+            btn.addEventListener('touchmove', (e) => {
+                cancelPress();
+            }, {passive: true}); 
 
             btn.addEventListener('mousedown', startPress);
             btn.addEventListener('mouseup', () => {
@@ -396,7 +585,25 @@
     function applyFilter(category) {
         currentFilter = category;
         renderDeck(); 
-        catInput.value = category; 
+        catInput.value = category;
+        
+        // Map category names to colors
+        const categoryColors = {
+            'WORK': '#FF0000',
+            'TODO': '#0000FF',
+            'IDEA': '#FFFF00',
+            'WOW': '#FF00FF',
+            'WFGWG': '#FFA500',
+            'SRF': '#00FF00',
+            'RRRR': '#FF69B4',
+            'TTT': '#00FFFF',
+            'FD': '#FF4500',
+            'FWERFFFF': '#8B00FF',
+            'GEN': '#00CED1'
+        };
+        
+        const color = categoryColors[category] || '#00D9FF';
+        document.documentElement.style.setProperty('--active-category-color', color);
 
         const rows = document.querySelectorAll('#notes-list .note-row');
         rows.forEach(row => {
@@ -478,8 +685,8 @@
         row.innerHTML = `
             <div class="spacer-line number"></div>
             <div class="content-wrapper">
+                <input class="note-cat-input" type="text" readonly value="${category}">
                 <div class="delete-hint">DELETE</div>
-                <div class="note-cat-label">${category}</div>
                 <div class="note-content" contenteditable="true" spellcheck="false">${text}</div>
                 <button class="desktop-delete-btn" tabindex="-1">×</button>
             </div>
