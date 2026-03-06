@@ -2,255 +2,367 @@
 <html lang="en">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>Infinity Notes</title>
-
-    <link rel="manifest" href="manifest.json">
-    <meta name="apple-mobile-web-app-capable" content="yes">
-    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
-    <meta name="mobile-web-app-capable" content="yes">
-    <meta name="theme-color" content="#0F1419">
-
-    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&family=JetBrains+Mono:wght@600;700&display=swap" rel="stylesheet">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Monthly Expense Record Book</title>
     <style>
-        :root { --row-height: 90px; --num-width: 65px; --font-main: 1.7rem; --line-weight: 1.5px; --bg-dark: #0F1419; --bg-secondary: #1A1F29; --accent: #00D9FF; --line-style: var(--line-weight) solid var(--accent); --deck-height: 220px; --text-muted: #6B7280; --border-radius: 4px; --active-category-color: #00D9FF; }
-        * { box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
-        body { background-color: var(--bg-dark); margin: 0; padding: 0; display: flex; flex-direction: column; height: 100vh; font-family: 'Inter', sans-serif; overflow: hidden; overscroll-behavior-y: none; user-select: none; border-left: var(--line-weight) solid var(--active-category-color); }
-        .app-frame { display: flex; flex-direction: column; height: calc(100vh - var(--deck-height)); width: 100%; border-right: var(--line-weight) solid var(--active-category-color); position: relative; counter-reset: note-counter; }
-        #notes-list { display: flex; flex-direction: column; justify-content: flex-end; width: 100%; overflow-y: auto; flex-grow: 1; -webkit-mask-image: linear-gradient(to top, black 85%, transparent 100%); mask-image: linear-gradient(to top, black 85%, transparent 100%); }
-        .grid-row { display: grid; grid-template-columns: var(--num-width) 1fr; width: 100%; height: var(--row-height); flex-shrink: 0; background-color: var(--bg-dark); border-top: var(--line-style); }
-        .grid-row.hidden { display: none !important; }
-        .spacer-line { height: 100%; background-color: var(--bg-secondary); border-right: var(--line-weight) solid var(--active-category-color); display: flex; align-items: center; justify-content: center; z-index: 10; color: var(--active-category-color); font-weight: 700; font-family: 'JetBrains Mono', monospace; position: relative; }
-        .spacer-line.number { flex-direction: column; gap: 8px; }
-        .spacer-line.number::after { counter-increment: note-counter; content: counter(note-counter); font-size: 0.95rem; color: var(--accent); opacity: 1; font-weight: 600; order: 2; }
-        .spacer-line.infinity::after { content: "∞"; font-size: 1.8rem; color: var(--active-category-color); opacity: 0.8; }
-        .content-wrapper { position: relative; overflow: hidden; background-color: var(--accent); height: 100%; display: flex; }
-        .note-content { width: 100%; height: 100%; background-color: var(--bg-dark); color: var(--accent); border: none; padding: 16px 20px 0 16px; font-size: var(--font-main); font-weight: 600; outline: none; display: flex; align-items: center; caret-color: var(--accent); white-space: nowrap; overflow: hidden; transition: transform 0.25s; position: relative; z-index: 2; user-select: text; letter-spacing: 0.3px; }
-        .input-area { border-top-color: var(--active-category-color) !important; }
-        #cat-input { width: 90px; height: 100%; background-color: var(--bg-secondary); color: var(--active-category-color); border: none; border-right: var(--line-weight) solid var(--active-category-color); font-family: 'JetBrains Mono', monospace; font-size: 0.75rem; font-weight: 700; text-transform: uppercase; text-align: center; padding: 0 5px; outline: none; z-index: 5; user-select: text; letter-spacing: 1.2px; }
-        .note-cat-label { display: inline-flex; align-items: center; justify-content: center; font-size: 0.6rem; text-transform: uppercase; letter-spacing: 1.2px; pointer-events: none; z-index: 8; font-weight: 700; font-family: 'JetBrains Mono', monospace; padding: 6px 8px; border: 1.5px solid; border-radius: 3px; white-space: nowrap; order: 1; }
-        .note-cat-input { width: 90px; height: 100%; background-color: var(--bg-secondary); color: var(--accent); border: none; border-right: var(--line-style); font-family: 'JetBrains Mono', monospace; font-size: 0.75rem; font-weight: 700; text-transform: uppercase; text-align: center; padding: 0 5px; outline: none; z-index: 5; user-select: text; letter-spacing: 1.2px; cursor: default; }
-        #category-deck { position: fixed; bottom: 0; left: 0; width: 100%; height: var(--deck-height); background-color: var(--bg-secondary); border: var(--line-weight) solid var(--active-category-color); z-index: 100; display: flex; flex-direction: column; padding: 16px 20px 20px 20px; }
-        .deck-label { font-size: 0.6rem; color: var(--text-muted); text-transform: uppercase; margin-bottom: 12px; text-align: center; letter-spacing: 2px; font-weight: 700; font-family: 'JetBrains Mono', monospace; }
-        #deck-grid { display: flex; flex-wrap: wrap; gap: 10px; overflow-y: auto; justify-content: center; align-content: flex-start; height: 100%; padding-bottom: 10px; }
-        .deck-btn { background-color: transparent; border: var(--line-weight) solid var(--accent); color: var(--accent); font-family: 'Inter', sans-serif; font-weight: 700; font-size: 0.8rem; text-transform: uppercase; padding: 12px 16px; cursor: pointer; flex-grow: 1; min-width: 90px; max-width: 45%; text-align: center; transition: all 0.2s; letter-spacing: 0.8px; border-radius: var(--border-radius); }
-        .deck-btn.active { background-color: var(--accent); color: var(--bg-dark); }
-        .delete-hint { position: absolute; right: 25px; top: 0; bottom: 0; display: flex; align-items: center; color: var(--bg-dark); font-size: 0.85rem; font-weight: 700; z-index: 1; font-family: 'Inter', sans-serif; letter-spacing: 0.5px; }
-        .desktop-delete-btn { position: absolute; right: 0; top: 0; bottom: 0; width: 65px; background-color: var(--bg-dark); color: var(--accent); border: none; font-size: 1.6rem; display: flex; align-items: center; justify-content: center; cursor: pointer; z-index: 10; opacity: 0; transition: opacity 0.2s; }
-        .content-wrapper:hover .desktop-delete-btn { opacity: 1; }
-        @media (hover: none) { .desktop-delete-btn { display: none; } }
-        #notes-list::-webkit-scrollbar { display: none; } #deck-grid::-webkit-scrollbar { display: none; }
-        #main-input { padding-top: 0; font-size: 1.85rem; font-weight: 700; color: var(--active-category-color); caret-color: var(--active-category-color); }
-        #status-log { position: fixed; top: 10px; left: 10px; color: #333; font-size: 10px; font-family: monospace; z-index: 200; pointer-events: none;}
+        @import url('https://fonts.googleapis.com/css2?family=Poppins:wght@400;600;800&display=swap');
+
+        :root {
+            --text-main: #ffffff;
+            --text-muted: rgba(255, 255, 255, 0.75);
+            --btn-add: #4ade80;
+            --btn-delete: #f87171;
+        }
+
+        /* --- THEME 1: AYUSH (Slate Grey-Blue) --- */
+        body.theme-ayush {
+            --bg-color: #3c4250;
+            --shadow-dark: #292d37;
+            --shadow-light: #4f5769;
+            --accent: #cbd5e1; 
+            --accent-glow: rgba(203, 213, 225, 0.3);
+        }
+
+        /* --- THEME 2: AVISH (Cerulean Ocean Blue) --- */
+        body.theme-avish {
+            --bg-color: #2070a0;
+            --shadow-dark: #175276;
+            --shadow-light: #298eca;
+            --accent: #bae6fd; 
+            --accent-glow: rgba(186, 230, 253, 0.3);
+        }
+
+        /* --- THEME 3: SHEKHAR (Warm Amber/Copper) --- */
+        body.theme-shekhar {
+            --bg-color: #a36526;
+            --shadow-dark: #7a4b1c;
+            --shadow-light: #cc7f30;
+            --accent: #fef3c7; 
+            --accent-glow: rgba(254, 243, 199, 0.3);
+        }
+
+        * { box-sizing: border-box; margin: 0; padding: 0; }
+
+        body {
+            font-family: 'Poppins', sans-serif;
+            padding: clamp(10px, 3vw, 25px); 
+            background-color: var(--bg-color); 
+            color: var(--text-main); 
+            transition: background-color 0.5s ease, color 0.5s ease;
+        }
+
+        .analyzer-wrapper { width: 100%; margin: 0 auto; max-width: 900px; }
+
+        #sync-status {
+            position: fixed; top: 15px; right: 25px; font-size: 13px; font-weight: 600;
+            color: var(--text-muted); z-index: 1000; display: flex; align-items: center;
+            gap: 8px; background: rgba(0,0,0,0.2); padding: 6px 12px; border-radius: 20px;
+        }
+        
+        #sync-dot { width: 8px; height: 8px; border-radius: 50%; background-color: #facc15; transition: background-color 0.3s; }
+
+        .neu-raised {
+            background: var(--bg-color);
+            box-shadow: 6px 6px 14px var(--shadow-dark), -6px -6px 14px var(--shadow-light);
+            border-radius: 12px; border: none; transition: background-color 0.5s ease, box-shadow 0.5s ease;
+        }
+
+        .neu-pressed {
+            background: var(--bg-color);
+            box-shadow: inset 3px 3px 6px var(--shadow-dark), inset -3px -3px 6px var(--shadow-light);
+            border-radius: 8px; border: none; transition: background-color 0.5s ease, box-shadow 0.5s ease;
+        }
+
+        .header-box { text-align: center; padding: 25px; margin-bottom: 30px; }
+
+        .main-title, .sub-title {
+            font-weight: 800; letter-spacing: 1px;
+            transition: color 0.5s ease, text-shadow 0.5s ease;
+            text-shadow: 3px 3px 6px var(--shadow-dark), -2px -2px 4px var(--shadow-light);
+        }
+
+        .main-title { font-size: clamp(24px, 5vw, 36px); margin-bottom: 8px; color: var(--accent); }
+        .sub-title { font-size: clamp(16px, 3vw, 20px); color: var(--text-muted); font-weight: 600; }
+
+        .tabs-container { display: flex; justify-content: center; gap: 15px; padding: 15px; margin-bottom: 35px; }
+
+        .tab-btn {
+            flex: 1; padding: clamp(12px, 2.5vw, 16px); font-weight: 800; font-size: clamp(14px, 3vw, 18px); 
+            cursor: pointer; color: var(--text-muted); transition: all 0.4s ease; text-transform: uppercase;
+            letter-spacing: 1px; display: flex; align-items: center; justify-content: center; gap: 8px;
+            border-radius: 10px; background: var(--bg-color); border: none;
+            box-shadow: 4px 4px 8px var(--shadow-dark), -4px -4px 8px var(--shadow-light);
+        }
+
+        .tab-btn.active {
+            box-shadow: inset 4px 4px 8px var(--shadow-dark), inset -4px -4px 8px var(--shadow-light);
+            color: var(--accent); text-shadow: 0 0 10px var(--accent-glow);
+        }
+
+        .lock-icon { font-size: 14px; opacity: 0.6; transition: transform 0.2s, opacity 0.2s; padding: 2px; }
+        .tab-btn:hover .lock-icon { opacity: 0.9; }
+        .lock-icon:hover { transform: scale(1.3); opacity: 1 !important; }
+        .lock-icon.is-locked { opacity: 1; }
+
+        .person-card { display: none; flex-direction: column; overflow: hidden; animation: fadeIn 0.4s ease-in-out; padding: 15px; }
+
+        @keyframes fadeIn { from { opacity: 0; transform: translateY(15px); } to { opacity: 1; transform: translateY(0); } }
+
+        .person-header-row { padding: 20px; text-align: center; margin-bottom: 10px; }
+
+        .person-name {
+            font-size: clamp(22px, 4vw, 28px); font-weight: 800; text-transform: uppercase;
+            letter-spacing: 2px; margin: 0; color: var(--accent);
+            text-shadow: 3px 3px 6px var(--shadow-dark), -2px -2px 4px var(--shadow-light);
+            transition: color 0.5s ease;
+        }
+
+        .data-table { width: 100%; border-collapse: separate; border-spacing: 0 12px; table-layout: fixed; }
+        .data-table th, .data-table td { padding: 0 8px; text-align: left; border: none; }
+        .data-table th:nth-child(1), .data-table td:nth-child(1) { width: 40%; }
+        .data-table th:nth-child(2), .data-table td:nth-child(2) { width: 25%; }
+        .data-table th:nth-child(3), .data-table td:nth-child(3) { width: 20%; }
+        .data-table th:nth-child(4), .data-table td:nth-child(4) { width: 15%; text-align: center; }
+
+        .data-table th { font-weight: 800; font-size: 14px; text-transform: uppercase; color: var(--text-muted); padding-bottom: 5px; }
+
+        .data-table input {
+            width: 100%; padding: 12px 15px; outline: none; font-size: 16px; font-weight: 600;
+            font-family: 'Poppins', sans-serif; color: var(--text-main); transition: color 0.3s ease; min-width: 0; 
+        }
+        .data-table input:focus { color: var(--accent); text-shadow: 0 0 5px var(--accent-glow); }
+
+        .action-btns { display: flex; justify-content: center; gap: 10px; align-items: center; height: 100%; }
+
+        .action-btns button {
+            background: var(--bg-color); border: none; width: 38px; height: 38px; border-radius: 50%;
+            font-weight: bold; font-size: 18px; cursor: pointer;
+            box-shadow: 3px 3px 6px var(--shadow-dark), -3px -3px 6px var(--shadow-light);
+            transition: all 0.3s ease; display: flex; align-items: center; justify-content: center;
+        }
+        .action-btns button:active { box-shadow: inset 2px 2px 4px var(--shadow-dark), inset -2px -2px 4px var(--shadow-light); }
+
+        .add-btn { color: var(--btn-add); }
+        .delete-btn { color: var(--btn-delete); }
+
+        .total-row td { padding-top: 25px; font-weight: 800; font-size: clamp(20px, 4vw, 24px); }
+        .total-label { text-align: right; padding-right: 20px !important; color: var(--text-muted); }
+        .total-val { color: var(--accent); text-shadow: 2px 2px 5px var(--shadow-dark), 0 0 10px var(--accent-glow); transition: color 0.5s ease; }
     </style>
 </head>
-<body>
+<body class="theme-shekhar">
 
-    <div id="status-log">Connecting...</div>
-    <div class="app-frame">
-        <div id="notes-list"></div>
-        <div class="input-area grid-row">
-            <div class="spacer-line infinity"></div>
-            <div class="content-wrapper">
-                <input id="cat-input" list="cat-suggestions" placeholder="CAT" autocomplete="off">
-                <datalist id="cat-suggestions"></datalist>
-                <div id="main-input" class="note-content" contenteditable="true" spellcheck="false"></div>
-            </div>
+<div id="sync-status">
+    <span id="sync-dot"></span>
+    <span id="sync-text">Connecting...</span>
+</div>
+
+<div class="analyzer-wrapper">
+    <div class="header-box neu-raised">
+        <div class="main-title">Monthly Expense Record Book</div>
+        <div class="sub-title">1 March To 31 March 2026</div>
+    </div>
+
+    <div class="tabs-container neu-raised">
+        <button class="tab-btn" data-target="ayush" onclick="switchTab('ayush')">Ayush <span class="lock-icon" data-id="ayush" onclick="toggleLock(event, 'ayush')">🔓</span></button>
+        <button class="tab-btn" data-target="avish" onclick="switchTab('avish')">Avish <span class="lock-icon" data-id="avish" onclick="toggleLock(event, 'avish')">🔓</span></button>
+        <button class="tab-btn active" data-target="shekhar" onclick="switchTab('shekhar')">Shekhar <span class="lock-icon" data-id="shekhar" onclick="toggleLock(event, 'shekhar')">🔓</span></button>
+    </div>
+
+    <div class="content-container">
+        <div id="ayush" class="person-card neu-raised">
+            <div class="person-header-row"><h2 class="person-name">Ayush's Expenses</h2></div>
+            <table class="data-table">
+                <tr><th>Item</th><th>Quantity</th><th>Cost</th><th></th></tr>
+                <tbody class="table-body"></tbody>
+                <tr class="total-row"><td colspan="2" class="total-label">Total:</td><td class="total-val">0.00</td><td></td></tr>
+            </table>
+        </div>
+        <div id="avish" class="person-card neu-raised">
+            <div class="person-header-row"><h2 class="person-name">Avish's Expenses</h2></div>
+            <table class="data-table">
+                <tr><th>Item</th><th>Quantity</th><th>Cost</th><th></th></tr>
+                <tbody class="table-body"></tbody>
+                <tr class="total-row"><td colspan="2" class="total-label">Total:</td><td class="total-val">0.00</td><td></td></tr>
+            </table>
+        </div>
+        <div id="shekhar" class="person-card neu-raised">
+            <div class="person-header-row"><h2 class="person-name">Shekhar's Expenses</h2></div>
+            <table class="data-table">
+                <tr><th>Item</th><th>Quantity</th><th>Cost</th><th></th></tr>
+                <tbody class="table-body">
+                    <tr class="item-row"><td><input type="text" class="neu-pressed" value="Chawal"></td><td><input type="text" class="qty-input neu-pressed" value="5 kg"></td><td><input type="number" class="cost-input neu-pressed" value="200"></td><td><div class="action-btns"><button class="add-btn">＋</button><button class="delete-btn">✕</button></div></td></tr>
+                    <tr class="item-row"><td><input type="text" class="neu-pressed" value="Aata"></td><td><input type="text" class="qty-input neu-pressed" value="5 kg"></td><td><input type="number" class="cost-input neu-pressed" value="200"></td><td><div class="action-btns"><button class="add-btn">＋</button><button class="delete-btn">✕</button></div></td></tr>
+                    <tr class="item-row"><td><input type="text" class="neu-pressed" value="Moong Dal"></td><td><input type="text" class="qty-input neu-pressed" value="500gm"></td><td><input type="number" class="cost-input neu-pressed" value="60"></td><td><div class="action-btns"><button class="add-btn">＋</button><button class="delete-btn">✕</button></div></td></tr>
+                    <tr class="item-row"><td><input type="text" class="neu-pressed" value="Vim Bar"></td><td><input type="text" class="qty-input neu-pressed" value="1"></td><td><input type="number" class="cost-input neu-pressed" value="10"></td><td><div class="action-btns"><button class="add-btn">＋</button><button class="delete-btn">✕</button></div></td></tr>
+                    <tr class="item-row"><td><input type="text" class="neu-pressed" value="Tamatar"></td><td><input type="text" class="qty-input neu-pressed" value="600gm"></td><td><input type="number" class="cost-input neu-pressed" value="20"></td><td><div class="action-btns"><button class="add-btn">＋</button><button class="delete-btn">✕</button></div></td></tr>
+                    <tr class="item-row"><td><input type="text" class="neu-pressed" value="Phool govi"></td><td><input type="text" class="qty-input neu-pressed" value="1"></td><td><input type="number" class="cost-input neu-pressed" value="20"></td><td><div class="action-btns"><button class="add-btn">＋</button><button class="delete-btn">✕</button></div></td></tr>
+                    <tr class="item-row"><td><input type="text" class="neu-pressed" value="Dhania Patta"></td><td><input type="text" class="qty-input neu-pressed" value="1"></td><td><input type="number" class="cost-input neu-pressed" value="10"></td><td><div class="action-btns"><button class="add-btn">＋</button><button class="delete-btn">✕</button></div></td></tr>
+                    <tr class="item-row"><td><input type="text" class="neu-pressed" value="Kaddu"></td><td><input type="text" class="qty-input neu-pressed" value="1 Kg"></td><td><input type="number" class="cost-input neu-pressed" value="40"></td><td><div class="action-btns"><button class="add-btn">＋</button><button class="delete-btn">✕</button></div></td></tr>
+                    <tr class="item-row"><td><input type="text" class="neu-pressed" value="Palak Saag"></td><td><input type="text" class="qty-input neu-pressed" value="1"></td><td><input type="number" class="cost-input neu-pressed" value="10"></td><td><div class="action-btns"><button class="add-btn">＋</button><button class="delete-btn">✕</button></div></td></tr>
+                </tbody>
+                <tr class="total-row"><td colspan="2" class="total-label">Total:</td><td class="total-val">0.00</td><td></td></tr>
+            </table>
         </div>
     </div>
+</div>
 
-    <div id="category-deck">
-        <div class="deck-label">SYSTEM_CATEGORIES (HOLD_TO_WIPE)</div>
-        <div id="deck-grid"></div>
-    </div>
+<script type="module">
+    import { initializeApp } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js";
+    import { getDatabase, ref, set, get } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-database.js";
 
-    <script type="module">
-        import { initializeApp } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js";
-        import { getDatabase, ref, set, onValue } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-database.js";
+    const firebaseConfig = {
+        apiKey: "AIzaSyAYHA8Qw3Qzbyg8MtjrSKcJusNi4VaA6V4",
+        authDomain: "system-data-bf026.firebaseapp.com",
+        databaseURL: "https://system-data-bf026-default-rtdb.asia-southeast1.firebasedatabase.app",
+        projectId: "system-data-bf026",
+        storageBucket: "system-data-bf026.firebasestorage.app",
+        messagingSenderId: "718302899022",
+        appId: "1:718302899022:web:f1675dbcc293e138c68c1f"
+    };
 
-        const firebaseConfig = {
-            apiKey: "AIzaSyAYHA8Qw3Qzbyg8MtjrSKcJusNi4VaA6V4",
-            authDomain: "system-data-bf026.firebaseapp.com",
-            databaseURL: "https://system-data-bf026-default-rtdb.asia-southeast1.firebasedatabase.app",
-            projectId: "system-data-bf026",
-            storageBucket: "system-data-bf026.firebasestorage.app",
-            messagingSenderId: "718302899022",
-            appId: "1:718302899022:web:f1675dbcc293e138c68c1f"
-        };
+    const app = initializeApp(firebaseConfig);
+    const db = getDatabase(app);
+    const dbRef = ref(db, 'expense_tracker_records');
 
-        const app = initializeApp(firebaseConfig);
-        const db = getDatabase(app);
-        const dbRef = ref(db, 'infinity_notes_data'); 
+    const syncDot = document.getElementById('sync-dot');
+    const syncText = document.getElementById('sync-text');
 
-        const notesList = document.getElementById('notes-list');
-        const mainInput = document.getElementById('main-input');
-        const catInput = document.getElementById('cat-input');
-        const catDataList = document.getElementById('cat-suggestions');
-        const deckGrid = document.getElementById('deck-grid');
-        const statusLog = document.getElementById('status-log');
+    function updateSyncStatus(status) {
+        if (status === 'syncing') { syncDot.style.backgroundColor = '#facc15'; syncText.innerText = 'Saving...'; }
+        else if (status === 'synced') { syncDot.style.backgroundColor = '#4ade80'; syncText.innerText = 'Data Synced'; }
+        else if (status === 'error') { syncDot.style.backgroundColor = '#f87171'; syncText.innerText = 'Error Saving'; }
+    }
 
-        let savedCategories = new Set(["WORK", "TODO", "IDEA", "GEN"]);
-        let currentFilter = 'GEN';
-        let customCategoryColors = {};
-        let allNotes = [];
+    function escapeHTML(str) { return String(str || '').replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;'); }
 
-        onValue(dbRef, (snapshot) => {
-            const data = snapshot.val();
-            if (data) {
-                if(data.notes) allNotes = data.notes; else allNotes = [];
-                if(data.categories) savedCategories = new Set(data.categories);
-                if(data.colors) customCategoryColors = data.colors;
-                renderAll();
-                statusLog.innerText = "LIVE"; statusLog.style.color = "#00D9FF";
-            } else { renderAll(); }
+    function createNewRowHTML(item = '', qty = '', cost = '') {
+        return `
+            <td><input type="text" class="neu-pressed" value="${escapeHTML(item)}"></td>
+            <td><input type="text" class="qty-input neu-pressed" value="${escapeHTML(qty)}"></td> 
+            <td><input type="number" class="cost-input neu-pressed" value="${escapeHTML(cost)}"></td>
+            <td><div class="action-btns"><button class="add-btn">＋</button><button class="delete-btn">✕</button></div></td>
+        `;
+    }
+
+    let saveTimeout;
+    function debounceSave() {
+        updateSyncStatus('syncing');
+        clearTimeout(saveTimeout);
+        saveTimeout = setTimeout(() => {
+            const dataToSave = {};
+            ['ayush', 'avish', 'shekhar'].forEach(p => {
+                dataToSave[p] = [];
+                document.querySelectorAll(`#${p} .item-row`).forEach(row => {
+                    const inputs = row.querySelectorAll('input');
+                    const item = inputs[0].value; const qty = inputs[1].value; const cost = inputs[2].value;
+                    if (item.trim() || qty.trim() || cost.trim()) dataToSave[p].push({ item, qty, cost });
+                });
+            });
+            set(dbRef, dataToSave).then(() => updateSyncStatus('synced')).catch(() => updateSyncStatus('error'));
+        }, 1500); 
+    }
+
+    get(dbRef).then((snapshot) => {
+        const data = snapshot.exists() ? snapshot.val() : {};
+        ['ayush', 'avish', 'shekhar'].forEach(person => {
+            const tbody = document.querySelector(`#${person} .table-body`);
+            const personData = data[person] || [];
+            if (personData.length > 0) {
+                tbody.innerHTML = '';
+                personData.forEach(rowData => {
+                    const newRow = document.createElement('tr'); newRow.className = 'item-row';
+                    newRow.innerHTML = createNewRowHTML(rowData.item, rowData.qty, rowData.cost); tbody.appendChild(newRow);
+                });
+                const blankRow = document.createElement('tr'); blankRow.className = 'item-row';
+                blankRow.innerHTML = createNewRowHTML(); tbody.appendChild(blankRow);
+            } else if (tbody.querySelectorAll('.item-row').length === 0) {
+                const newRow = document.createElement('tr'); newRow.className = 'item-row';
+                newRow.innerHTML = createNewRowHTML(); tbody.appendChild(newRow);
+            } else {
+                const blankRow = document.createElement('tr'); blankRow.className = 'item-row';
+                blankRow.innerHTML = createNewRowHTML(); tbody.appendChild(blankRow);
+            }
         });
+        calculateTotals(); updateSyncStatus('synced');
+        if (!snapshot.exists()) debounceSave();
+    });
 
-        function pushToFirebase() {
-            set(dbRef, { notes: allNotes, categories: [...savedCategories], colors: customCategoryColors });
-        }
-
-        function generateColorForCategory(category) {
-            let hash = 0;
-            for (let i = 0; i < category.length; i++) hash = category.charCodeAt(i) + ((hash << 5) - hash);
-            const hue = Math.abs(hash % 360);
-            return `hsl(${hue}, ${85 + (Math.abs(hash) % 15)}%, ${50 + (Math.abs(hash >> 8) % 15)}%)`;
-        }
-
-        function getCategoryColor(category) {
-            const defaults = { 'WORK':'#FF1744', 'TODO':'#00E5FF', 'IDEA':'#FFEA00', 'GEN':'#00BCD4' };
-            if (defaults[category]) return defaults[category];
-            if (!customCategoryColors[category]) {
-                customCategoryColors[category] = generateColorForCategory(category);
-                pushToFirebase();
-            }
-            return customCategoryColors[category];
-        }
-
-        function applyCategoryStyles(category) {
-            const color = getCategoryColor(category);
-            let styleEl = document.getElementById('dyn-style-'+category);
-            if (!styleEl) {
-                styleEl = document.createElement('style');
-                styleEl.id = 'dyn-style-'+category;
-                document.head.appendChild(styleEl);
-            }
-            styleEl.textContent = `
-                .note-row[data-category="${category}"] { border-top-color: ${color} !important; }
-                .note-row[data-category="${category}"] .spacer-line.number::after,
-                .note-row[data-category="${category}"] .note-content,
-                .note-row[data-category="${category}"] .note-cat-input,
-                .deck-btn[data-category="${category}"] { color: ${color}; }
-                .deck-btn[data-category="${category}"] { border-color: ${color}; }
-                .deck-btn[data-category="${category}"].active { background-color: ${color}; color: #000; }
-                .note-row[data-category="${category}"] .spacer-line { border-right-color: ${color}; }
-            `;
-        }
-
-        function renderAll() {
-            notesList.innerHTML = '';
-            catDataList.innerHTML = '';
-            deckGrid.innerHTML = '';
-            
-            savedCategories.forEach(cat => {
-                applyCategoryStyles(cat);
-                const opt = document.createElement('option'); opt.value = cat; catDataList.appendChild(opt);
-                const btn = document.createElement('button');
-                btn.className = `deck-btn ${currentFilter === cat ? 'active' : ''}`;
-                btn.innerText = cat;
-                btn.dataset.category = cat;
-                btn.onclick = () => { applyFilter(cat); };
-                
-                let timer;
-                const start = () => timer = setTimeout(() => {
-                    if(cat!=='GEN' && confirm(`Delete ${cat}?`)) {
-                        allNotes.forEach(n => { if(n.category===cat) n.category='GEN'; });
-                        savedCategories.delete(cat);
-                        currentFilter='GEN';
-                        pushToFirebase();
-                    }
-                }, 800);
-                const end = () => clearTimeout(timer);
-                btn.onmousedown = btn.ontouchstart = start;
-                btn.onmouseup = btn.ontouchend = end;
-                deckGrid.appendChild(btn);
+    function calculateTotals() {
+        document.querySelectorAll('.person-card').forEach(card => {
+            let total = 0;
+            card.querySelectorAll('.item-row').forEach(row => {
+                total += parseFloat(row.querySelector('.cost-input').value) || 0;
             });
+            card.querySelector('.total-val').textContent = total.toFixed(2);
+        });
+    }
 
-            allNotes.forEach(note => {
-                const row = createNoteRow(note.text, note.category);
-                notesList.appendChild(row);
-                if(currentFilter && note.category !== currentFilter) row.classList.add('hidden');
-            });
-
-            if(!savedCategories.has(currentFilter)) currentFilter = 'GEN';
-            const color = getCategoryColor(currentFilter);
-            document.documentElement.style.setProperty('--active-category-color', color);
-            catInput.value = currentFilter;
-        }
-
-        function applyFilter(cat) {
-            currentFilter = cat;
-            renderAll();
-            setTimeout(() => { notesList.scrollTop = notesList.scrollHeight; }, 10);
-        }
-
-        function createNoteRow(text, category) {
-            const row = document.createElement('div');
-            row.className = 'note-row grid-row';
-            row.dataset.category = category;
-            row.innerHTML = `
-                <div class="spacer-line number"></div>
-                <div class="content-wrapper">
-                    <input class="note-cat-input" type="text" readonly value="${category}">
-                    <div class="delete-hint">DELETE</div>
-                    <div class="note-content" contenteditable="true" spellcheck="false">${text}</div>
-                    <button class="desktop-delete-btn">×</button>
-                </div>`;
-            
-            const content = row.querySelector('.note-content');
-            
-            const updateNote = () => {
-                const idx = Array.from(notesList.children).indexOf(row);
-                if(idx > -1) { allNotes[idx].text = content.innerText; pushToFirebase(); }
-            };
-            content.onkeyup = updateNote;
-
-            row.querySelector('.desktop-delete-btn').onclick = () => {
-                const idx = Array.from(notesList.children).indexOf(row);
-                if(idx > -1) { allNotes.splice(idx, 1); pushToFirebase(); }
-            };
-
-            let startX = 0;
-            content.ontouchstart = (e) => startX = e.touches[0].clientX;
-            content.ontouchmove = (e) => {
-                let diff = e.touches[0].clientX - startX;
-                if(diff < -20) content.style.transform = `translateX(${diff+20}px)`;
-            };
-            content.ontouchend = (e) => {
-                let diff = e.changedTouches[0].clientX - startX;
-                content.style.transition = 'transform 0.3s';
-                if(diff < -150) {
-                     content.style.transform = 'translateX(-100%)';
-                     setTimeout(() => row.querySelector('.desktop-delete-btn').click(), 300);
-                } else { content.style.transform = 'translateX(0)'; }
-            };
-            return row;
-        }
-
-        mainInput.onkeydown = (e) => {
-            if(e.key === 'Enter') {
-                e.preventDefault();
-                const txt = mainInput.innerText.trim();
-                if(txt) {
-                    let cat = catInput.value.trim().toUpperCase() || "GEN";
-                    if(!savedCategories.has(cat)) { savedCategories.add(cat); }
-                    allNotes.push({ text: txt, category: cat });
-                    currentFilter = cat;
-                    mainInput.innerText = "";
-                    pushToFirebase();
-                }
+    document.addEventListener('input', (e) => {
+        if (e.target.tagName === 'INPUT') debounceSave();
+        if (e.target.classList.contains('cost-input')) calculateTotals();
+        const row = e.target.closest('.item-row');
+        if (row && row === row.parentNode.lastElementChild) {
+            let hasVal = false; row.querySelectorAll('input').forEach(i => { if(i.value.trim()) hasVal = true; });
+            if (hasVal) {
+                const newRow = document.createElement('tr'); newRow.className = 'item-row';
+                newRow.innerHTML = createNewRowHTML(); row.parentNode.appendChild(newRow);
             }
-        };
-        catInput.onkeydown = (e) => { if(e.key==='Enter') { e.preventDefault(); mainInput.focus(); }};
-    </script>
+        }
+    });
+
+    document.addEventListener('click', (e) => {
+        if (e.target.classList.contains('add-btn')) {
+            const row = e.target.closest('.item-row');
+            const newRow = document.createElement('tr'); newRow.className = 'item-row';
+            newRow.innerHTML = createNewRowHTML(); row.parentNode.insertBefore(newRow, row.nextSibling);
+            debounceSave();
+        }
+        if (e.target.classList.contains('delete-btn')) {
+            const row = e.target.closest('.item-row');
+            if (row.parentNode.querySelectorAll('.item-row').length === 1) {
+                row.querySelectorAll('input').forEach(i => i.value = '');
+            } else { row.remove(); }
+            calculateTotals(); debounceSave();
+        }
+    });
+
+    window.switchTab = function(personId) {
+        document.querySelectorAll('.person-card').forEach(card => card.style.display = 'none');
+        document.querySelectorAll('.tab-btn').forEach(tab => tab.classList.remove('active'));
+        document.getElementById(personId).style.display = 'flex';
+        document.querySelector(`.tab-btn[data-target="${personId}"]`).classList.add('active');
+        document.body.className = `theme-${personId}`;
+    };
+
+    window.toggleLock = function(event, personId) {
+        event.stopPropagation();
+        const currentlyLocked = localStorage.getItem('lockedTab');
+        if (currentlyLocked === personId) {
+            localStorage.removeItem('lockedTab');
+        } else {
+            localStorage.setItem('lockedTab', personId);
+        }
+        updateLockUI(localStorage.getItem('lockedTab'));
+    };
+
+    function updateLockUI(lockedPersonId) {
+        document.querySelectorAll('.lock-icon').forEach(icon => {
+            if (icon.getAttribute('data-id') === lockedPersonId) {
+                icon.innerHTML = '🔒'; icon.classList.add('is-locked');
+            } else {
+                icon.innerHTML = '🔓'; icon.classList.remove('is-locked');
+            }
+        });
+    }
+
+    document.addEventListener('DOMContentLoaded', () => {
+        // Respect lock if it exists, otherwise always default to shekhar
+        const lockedTab = localStorage.getItem('lockedTab');
+        const initialTab = lockedTab || 'shekhar';
+        window.switchTab(initialTab);
+        updateLockUI(lockedTab);
+    });
+</script>
 </body>
 </html>
